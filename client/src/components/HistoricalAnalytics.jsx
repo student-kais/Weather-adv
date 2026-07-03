@@ -1,23 +1,38 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion as Motion } from 'framer-motion';
 import { History, TrendingUp, Droplets, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const HistoricalAnalytics = ({ historicalData, lastYearData }) => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const stats = useMemo(() => {
         if (!historicalData || !historicalData.daily) return null;
         const daily = historicalData.daily;
         const lyDaily = lastYearData?.daily;
 
-        // Calculate average max temp this month
-        const avgMax = daily.temperature_2m_max.reduce((a, b) => a + b, 0) / daily.temperature_2m_max.length;
-        const totalRain = daily.precipitation_sum.reduce((a, b) => a + b, 0);
+        const daysToShow = isMobile ? 14 : daily.temperature_2m_max.length;
+        
+        const currentTemp = daily.temperature_2m_max.slice(-daysToShow);
+        const currentRain = daily.precipitation_sum.slice(-daysToShow);
+
+        // Calculate average max temp this period
+        const avgMax = currentTemp.reduce((a, b) => a + b, 0) / currentTemp.length;
+        const totalRain = currentRain.reduce((a, b) => a + b, 0);
 
         let comparisonText = "";
         let comparisonClass = "";
         let comparisonIcon = null;
 
         if (lyDaily) {
-            const lyAvgMax = lyDaily.temperature_2m_max.reduce((a, b) => a + b, 0) / lyDaily.temperature_2m_max.length;
+            const lyTemp = lyDaily.temperature_2m_max.slice(-daysToShow);
+            const lyAvgMax = lyTemp.reduce((a, b) => a + b, 0) / lyTemp.length;
             const diff = avgMax - lyAvgMax;
             const absDiff = Math.abs(diff).toFixed(1);
 
@@ -35,17 +50,17 @@ const HistoricalAnalytics = ({ historicalData, lastYearData }) => {
             }
         }
 
-        return { avgMax: avgMax.toFixed(1), totalRain: totalRain.toFixed(1), comparisonText, comparisonClass, comparisonIcon };
-    }, [historicalData, lastYearData]);
+        return { avgMax: avgMax.toFixed(1), totalRain: totalRain.toFixed(1), comparisonText, comparisonClass, comparisonIcon, daysToShow };
+    }, [historicalData, lastYearData, isMobile]);
 
     if (!stats) return null;
 
     // Simple SVG Line Chart Drawing
     const renderChart = () => {
-        const data = historicalData.daily.temperature_2m_max;
-        const width = 800;
-        const height = 200;
-        const padding = 20;
+        const data = historicalData.daily.temperature_2m_max.slice(-stats.daysToShow);
+        const width = isMobile ? 400 : 800;
+        const height = isMobile ? 250 : 200;
+        const padding = isMobile ? 25 : 20;
 
         const min = Math.min(...data) - 2;
         const max = Math.max(...data) + 2;
@@ -58,7 +73,7 @@ const HistoricalAnalytics = ({ historicalData, lastYearData }) => {
         }).join(' ');
 
         return (
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48 mt-4 overflow-visible">
+            <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', marginTop: '1rem', overflow: 'visible' }}>
                 {/* Horizontal grid lines */}
                 {[0, 0.5, 1].map((p, i) => (
                     <line
@@ -119,29 +134,29 @@ const HistoricalAnalytics = ({ historicalData, lastYearData }) => {
     return (
         <section className="animate-up" style={{ animationDelay: '0.6s' }}>
             <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <History /> Historical Analytics (30 Days)
+                <History /> Historical Analytics ({stats.daysToShow} Days)
             </h2>
 
-            <div className="glass" style={{ padding: '2rem' }}>
+            <div className="glass-item" style={{ padding: '2rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-                    <div className="flex flex-col gap-1">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                         <span className="label">Avg Max Temp</span>
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <TrendingUp size={20} className="text-accent" style={{ color: 'var(--accent-color)' }} />
                             <span style={{ fontSize: '2rem', fontWeight: 700 }}>{stats.avgMax}°C</span>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                         <span className="label">Total Precipitation</span>
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Droplets size={20} className="text-blue-400" />
                             <span style={{ fontSize: '2rem', fontWeight: 700 }}>{stats.totalRain}mm</span>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 justify-center">
-                        <div className={`flex items-center gap-2 ${stats.comparisonClass}`} style={{ fontWeight: 600 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }} className={stats.comparisonClass}>
                             {stats.comparisonIcon} {stats.comparisonText}
                         </div>
                     </div>
@@ -151,7 +166,7 @@ const HistoricalAnalytics = ({ historicalData, lastYearData }) => {
                     <div style={{ position: 'absolute', top: 0, left: 0, fontSize: '0.8rem', opacity: 0.5 }}>Temp Trend (°C)</div>
                     {renderChart()}
                     <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.5, fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                        <span>30 Days Ago</span>
+                        <span>{stats.daysToShow} Days Ago</span>
                         <span>Today</span>
                     </div>
                 </div>

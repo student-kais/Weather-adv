@@ -114,14 +114,14 @@ const SmartInsights = ({ weather }) => {
             <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <Sparkles className="text-yellow-400" /> Smart Insights
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 {insights.map((insight, idx) => (
                     <Motion.div
                         key={idx}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="glass"
+                        className="glass-item"
                         style={{
                             padding: '1.5rem',
                             display: 'flex',
@@ -131,7 +131,7 @@ const SmartInsights = ({ weather }) => {
                             background: `linear-gradient(to right, ${insight.type === 'heatwave' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)'}, transparent)`
                         }}
                     >
-                        <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)' }}>
+                        <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
                             {insight.icon}
                         </div>
                         <div>

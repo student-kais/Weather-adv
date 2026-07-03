@@ -96,14 +96,14 @@ const AgriInsights = ({ weather }) => {
             <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.8rem', color: '#22c55e' }}>
                 <Sprout className="text-green-500" /> Agriculture Insights
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 {insights.map((insight, idx) => (
                     <Motion.div
                         key={idx}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="glass"
+                        className="glass-item"
                         style={{
                             padding: '1.5rem',
                             display: 'flex',
@@ -113,7 +113,7 @@ const AgriInsights = ({ weather }) => {
                             background: `linear-gradient(to right, rgba(34, 197, 94, 0.05), transparent)`
                         }}
                     >
-                        <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)' }}>
+                        <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
                             {insight.icon}
                         </div>
                         <div>

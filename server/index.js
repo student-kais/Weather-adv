@@ -20,6 +20,10 @@ mongoose.connect(MONGODB_URI)
 const History = require('./models/History');
 
 // Routes
+app.get('/', (req, res) => {
+    res.send('Weather App Backend API is running. Access the frontend app instead.');
+});
+
 app.post('/api/history', async (req, res) => {
     try {
         const newHistory = new History(req.body);

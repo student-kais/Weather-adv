@@ -4,7 +4,8 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
   Wind, Droplets, Activity, Sun, Sunrise, Sunset,
   Thermometer, Clock, Calendar, CloudSun, Sprout,
-  Star, Volume2, Bookmark, Map as MapIcon, Info
+  Star, Volume2, Bookmark, Map as MapIcon, Info,
+  Cloud, CloudRain, CloudLightning, CloudSnow, Moon
 } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import ThemeToggle from './components/ThemeToggle';
@@ -65,6 +66,16 @@ function App() {
       ]);
 
       setLocation(name);
+      
+      // Save to backend MongoDB history (fire and forget)
+      const cityName = name.split(',')[0];
+      const countryName = name.split(',')[1]?.trim() || '';
+      axios.post('http://localhost:5000/api/history', {
+          name: cityName,
+          country: countryName,
+          lat: lat,
+          lon: lon
+      }).catch(err => console.log('Backend history save skipped'));
       setWeather(weatherRes.data);
       setAqi(aqiRes.data);
       setHistoricalData(histRes.data);
@@ -141,12 +152,12 @@ function App() {
 
             <main style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <section className="current-grid">
-                <Motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="hero-card glass">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                    <h1 className="location-name">{location}</h1>
+                <Motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="hero-card glass" style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem' }}>
                     <button onClick={toggleFavorite} className="btn-icon-small"><Star fill={favorites.find(f => f.name === location) ? "var(--accent-color)" : "none"} stroke="var(--accent-color)" size={20} /></button>
                     <button onClick={speakWeather} className="btn-icon-small"><Volume2 size={20} /></button>
                   </div>
+                  <h1 className="location-name">{location}</h1>
                   <p style={{ fontSize: '1.2rem', opacity: 0.8 }}>{getWeatherDesc(weather.current.weather_code)}</p>
                   <div className="temperature">{Math.round(weather.current.temperature_2m)}<span style={{ fontSize: '3rem', marginTop: '1rem' }}>°C</span></div>
                   <div style={{ display: 'flex', gap: '1.5rem', fontSize: '1.2rem' }}>
@@ -157,7 +168,7 @@ function App() {
 
                 <div className="dashboard">
                   <DetailCard icon={<Wind />} label="Wind" value={`${weather.current.wind_speed_10m} km/h`} subtext={getWindDir(weather.current.wind_direction_10m)} />
-                  <DetailCard icon={<Droplets />} label="Rain" value={`${weather.daily.precipitation_probability_max[0]}%`} subtext={weather.current.precipitation > 0 ? "It's raining" : "No rain"} />
+                  <DetailCard icon={<Droplets />} label="Rain Chance" value={`${weather.daily.precipitation_probability_max[0]}%`} subtext={weather.current.precipitation > 0 ? "It's raining" : "No rain"} />
                   <DetailCard icon={<Activity />} label="AQI" value={aqi?.current.us_aqi} subtext={getAqiStatus(aqi?.current.us_aqi)} />
                   <DetailCard icon={<Sun />} label="UV Index" value={weather.daily.uv_index_max[0]} subtext={getUvStatus(weather.daily.uv_index_max[0])} />
                   <DetailCard icon={<Sunrise />} label="Sunrise" value={formatTime(weather.daily.sunrise[0])} subtext={`Sunset: ${formatTime(weather.daily.sunset[0])}`} />
@@ -171,13 +182,13 @@ function App() {
               <section className="animate-up" style={{ animationDelay: '0.2s' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><Clock /> Hourly Forecast</h2>
-                  <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div className="glass-item" style={{ padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Info size={14} /> Time: {formatTime(weather.hourly.time[inspectedHour])}
                   </div>
                 </div>
-                <div className="glass" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <div className="glass-item" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                   <input type="range" min="0" max="23" value={inspectedHour} onChange={(e) => setInspectedHour(parseInt(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent-color)' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>
+                  <div className="hourly-details-text" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>
                     <span>{Math.round(weather.hourly.temperature_2m[inspectedHour])}°C</span>
                     <span>{weather.hourly.precipitation_probability[inspectedHour]}% Rain</span>
                     <span>{getWeatherDesc(weather.hourly.weather_code[inspectedHour])}</span>
@@ -185,7 +196,7 @@ function App() {
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
                   {weather.hourly.time.slice(0, 24).map((time, i) => (
-                    <div key={i} className="glass" style={{ minWidth: '110px', padding: '1.5rem', textAlign: 'center', flexShrink: 0, border: i === inspectedHour ? '2px solid var(--accent-color)' : 'none', transform: i === inspectedHour ? 'scale(1.05)' : 'none', transition: 'all 0.3s ease' }} onClick={() => setInspectedHour(i)}>
+                    <div key={i} className="glass-item" style={{ minWidth: '110px', padding: '1.5rem', textAlign: 'center', flexShrink: 0, border: i === inspectedHour ? '2px solid var(--accent-color)' : 'none', transform: i === inspectedHour ? 'scale(1.05)' : 'none', transition: 'all 0.3s ease' }} onClick={() => setInspectedHour(i)}>
                       <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{i === 0 ? 'Now' : formatTime(time)}</p>
                       <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>{Math.round(weather.hourly.temperature_2m[i])}°</p>
                       <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>{weather.hourly.precipitation_probability[i]}% rain</p>
@@ -196,13 +207,28 @@ function App() {
 
               <section className="animate-up" style={{ animationDelay: '0.4s' }}>
                 <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}><Calendar /> 14-Day Forecast</h2>
-                <div className="glass" style={{ overflow: 'hidden' }}>
+                <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
                   {weather.daily.time.map((time, i) => (
-                    <div key={i} className="daily-row">
-                      <span style={{ fontWeight: 600 }}>{i === 0 ? 'Today' : formatDate(time)}</span>
-                      <span style={{ opacity: 0.7 }}>{weather.daily.precipitation_probability_max[i]}%</span>
-                      <div style={{ padding: '0 1rem' }}><div className="temp-bar-container"><div className="temp-bar-fill" style={{ left: `${((weather.daily.temperature_2m_min[i] + 10) / 60) * 100}%`, width: `${((weather.daily.temperature_2m_max[i] - weather.daily.temperature_2m_min[i]) / 60) * 100}%` }}></div></div></div>
-                      <div style={{ textAlign: 'right', fontWeight: 600 }}>{Math.round(weather.daily.temperature_2m_max[i])}° / <span style={{ opacity: 0.6 }}>{Math.round(weather.daily.temperature_2m_min[i])}°</span></div>
+                    <div key={i} className="glass-item" style={{ minWidth: '160px', padding: '1.5rem', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>{i === 0 ? 'Today' : formatDate(time).split(',')[0]}</span>
+                        {getWeatherIconComponent(weather.daily.weather_code[i], 24)}
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.9 }}><Sun size={14} color="#fbbf24"/> High:</span>
+                          <span style={{ fontWeight: 600 }}>{Math.round(weather.daily.temperature_2m_max[i])}°C</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.9 }}><Moon size={14} color="#fbbf24"/> Low:</span>
+                          <span style={{ fontWeight: 600 }}>{Math.round(weather.daily.temperature_2m_min[i])}°C</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.9 }}><Droplets size={14} color="var(--accent-color)"/> Rain:</span>
+                          <span style={{ fontWeight: 600 }}>{weather.daily.precipitation_probability_max[i]}%</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -219,7 +245,7 @@ function App() {
 
 function DetailCard({ icon, label, value, subtext }) {
   return (
-    <div className="glass detail-card">
+    <div className="glass-item detail-card">
       <div className="label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{React.cloneElement(icon, { size: 14 })} {label}</div>
       <div className="value">{value}</div>
       <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>{subtext}</div>
@@ -230,6 +256,15 @@ function DetailCard({ icon, label, value, subtext }) {
 const getWeatherDesc = (code) => {
   const codes = { 0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 61: 'Slight rain', 95: 'Thunderstorm' };
   return codes[code] || 'Cloudy';
+};
+const getWeatherIconComponent = (code, size=20) => {
+  if (code === 0 || code === 1) return <Sun size={size} />;
+  if (code === 2) return <CloudSun size={size} />;
+  if (code === 3 || code === 45) return <Cloud size={size} />;
+  if (code >= 51 && code <= 67) return <CloudRain size={size} />;
+  if (code >= 71 && code <= 82) return <CloudSnow size={size} />;
+  if (code >= 95) return <CloudLightning size={size} />;
+  return <CloudSun size={size} />;
 };
 const getWindDir = (deg) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(deg / 45) % 8];
 const getAqiStatus = (aqi) => aqi <= 50 ? 'Good' : aqi <= 100 ? 'Moderate' : 'Unhealthy';

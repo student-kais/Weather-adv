@@ -75,7 +75,7 @@ const SearchBar = ({ onSearch }) => {
     return (
         <div className="search-wrapper">
             <div style={{ position: 'relative', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+                <div className="search-input-container" style={{ position: 'relative', flex: 1 }}>
                     <Search className="search-icon" size={20} />
                     <input
                         type="text"

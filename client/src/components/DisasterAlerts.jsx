@@ -118,14 +118,14 @@ const DisasterAlerts = ({ weather }) => {
     }
 
     return (
-        <div className="w-full mb-8 flex flex-col gap-4 animate-up">
+        <div style={{ width: '100%', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }} className="animate-up">
             {alerts.map((alert, idx) => (
                 <Motion.div
                     key={idx}
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="glass"
+                    className="glass-item"
                     style={{
                         padding: '1.5rem',
                         display: 'flex',
@@ -147,7 +147,8 @@ const DisasterAlerts = ({ weather }) => {
                         background: 'rgba(255,255,255,0.15)',
                         display: 'flex',
                         justifyContent: 'center',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        flexShrink: 0
                     }}>
                         {alert.icon}
                     </div>
